@@ -19,6 +19,8 @@ How to encode different land properties like water, sand, ice and greens?
 
 Excerpt can be found in ``data/terrarium``.
 
+[Adobe tool for extracting color gradients from images](https://color.adobe.com/de/create/image-gradient)
+
 
 ## Hypsometric Tinting
 
@@ -28,12 +30,12 @@ Excerpt can be found in ``data/terrarium``.
 
 ### Color Scheme
 
-* #2A1D31 Dark Blue -11.000 m
-* #46859B Medium Blue -600 m
-* #026247 Green 300 m
-* #D4C36D Ocker 1000 m
-* #7D2624 Brown/Red 2000 m
-* #FFFFFF White 5000+ m
+* #2A1D31 42,29,49 Dark Blue -11.000 m
+* #46859B 70,133,155 Medium Blue -100 m
+* #026247 2,98,71 Green 300 m
+* #D4C36D 212,195,109 Ocker 1000 m
+* #7D2624 125,38,36 Brown/Red 3000 m
+* #FFFFFF 255,255,255 White 5000+ m
 
 ![Gradient](docs/gradient.jpg) 
 
