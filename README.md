@@ -1,8 +1,9 @@
 # Hypsometric Map
 
-Convert terrarium encoded elevation tiles to hypsometric tint tiles.
+Convert terrarium encoded elevation tiles (left) to hypsometric tint tiles (right).
 
-![Germany Hypsometric](docs/deutschland_topo.jpg)
+![Terrarium](docs/tile-terr.png)
+![Hypsometric](docs/tile-hyp.png)
 
 
 ## Challenges
@@ -38,6 +39,10 @@ Excerpt can be found in ``data/terrarium``.
 * #FFFFFF 255,255,255 White 5000+ m
 
 ![Gradient](docs/gradient.jpg) 
+
+Example for a standart hypsometric map:
+
+![Germany Hypsometric](docs/deutschland_topo.jpg)
 
 ## Terrarium
 
