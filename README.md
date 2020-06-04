@@ -5,8 +5,17 @@ Convert terrarium encoded elevation tiles (left) to hypsometric tint tiles (righ
 ![Terrarium](docs/tile-terr.png)
 ![Hypsometric](docs/tile-hyp.png)
 
+## Usage
+
+1. Put (multiple) source files in ``data/terrarium`` e.g. ``data/terrarium/0/1/2.png`` where 0 is the zoom level, 1 is the x position and 2 the y position.
+
+2. Run ``python3 converter.py`` from the root folder.
+
+3. Find your converted tiles in ``data/hypsometric/..``.
+
 
 ## Challenges
+
 As Mapbox does not support coloring raster tiles ([Issue 2889](https://github.com/mapbox/mapbox-gl-js/issues/3889)), we need to manually change colors to hypsometric and serve raster tiles which can be used as is.
 
 How to encode different land properties like water, sand, ice and greens?
