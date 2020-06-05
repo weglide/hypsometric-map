@@ -5,6 +5,9 @@ Convert terrarium encoded elevation tiles (left) to hypsometric tint tiles (righ
 ![Terrarium](docs/tile-terr.png)
 ![Hypsometric](docs/tile-hyp.png)
 
+Preview with extra water layer and hillshading:
+![Preview](docs/preview.png)
+
 ## Usage
 
 1. Put (multiple) source files in ``data/terrarium`` e.g. ``data/terrarium/0/1/2.png`` where 0 is the zoom level, 1 is the x position and 2 the y position.
@@ -40,18 +43,24 @@ Excerpt can be found in ``data/terrarium``.
 
 ### Color Scheme
 
-* #2A1D31 42,29,49 Dark Blue -11.000 m
-* #46859B 70,133,155 Medium Blue -100 m
-* #026247 2,98,71 Green 300 m
-* #D4C36D 212,195,109 Ocker 1000 m
-* #7D2624 125,38,36 Brown/Red 3000 m
-* #FFFFFF 255,255,255 White 5000+ m
+| R   | G   | B   | Name        | Elevation in m |
+| --: | --: | --: | ----------- | -------------: |
+| 42  | 29  | 49  | Dark Blue   | -11.000        |
+| 70  | 133 | 155 | Medium Blue | -50            |
+| 2   |  98 |  71 | Dark Green  | 30             |
+| 212 | 195 | 109 | Ocker       | 800            |
+| 125 |  38 | 36  | Red Brown   | 2000           |
+| 255 | 255 | 255 | White       | 4800           |
+| 199 | 239 | 255 | Light Blue  | 7200+          |
 
 ![Gradient](docs/gradient.jpg) 
 
 Example for a standart hypsometric map:
 
 ![Germany Hypsometric](docs/deutschland_topo.jpg)
+
+Recommendation: Add extra Water Layer with 0.25 Opacity on fro better land/water distinction.
+Extra Hillshading might add extra details.
 
 ## Terrarium
 
