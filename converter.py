@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import PIL.Image as Img
 
-dirname = Path('data/terrarium') # path to source files
+dirname = Path('planet/terrarium') # path to source files
 foldername = 'hypsometric' # foldername to replace "terrarium" in output
 
 stops = np.array([-11000, -50, 30, 800, 2000, 4800, 7200]) # color stops in meter altitude
