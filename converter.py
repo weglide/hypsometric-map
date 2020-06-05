@@ -15,19 +15,8 @@ colors = np.array([
 ])
 
 
-# Open an Image
-def open_image(path: Path) -> Img.Image:
-    return Img.open(path)
-
-
-# Save Image
-def save_image(image: Img.Image, path: Path) -> None:
-    image.save(path, 'png')
-
-
 def get_elevation(array: np.ndarray) -> np.ndarray:
-    elevation = (array[:,:,0] * 256 + array[:,:,1] + array[:,:,2] / 256) - 32768
-    return elevation
+    return (array[:,:,0] * 256 + array[:,:,1] + array[:,:,2] / 256) - 32768
 
 
 def normalize(lower_bound: np.ndarray, upper_bound: np.ndarray, val: np.ndarray):
@@ -45,7 +34,7 @@ def get_hypsometric_color(elevation: np.ndarray) -> np.ndarray:
     assert stops[0] < elevation.all() <= stops[-1]
 
     bins = np.digitize(elevation, stops) - 1
-    pos = normalize(stops[bins], stops[bins+1], elevation)
+    pos = normalize(stops[bins], stops[bins + 1], elevation)
     color1 = colors[bins]
     color2 = colors[bins + 1]
 
@@ -79,11 +68,7 @@ def change_folder_in_path(path: Path, position: int, foldername: str) -> Path:
 if __name__ == '__main__':
     n = 0
     foldername = 'hypsometric'
-    
     start = time.time()
-
-    # Load Image (JPEG/JPG needs libjpeg to load)
-
     dirname = Path('data/terrarium')
     zoom_dirs = [f for f in dirname.iterdir() if f.is_dir()]
     
@@ -96,12 +81,13 @@ if __name__ == '__main__':
 
             for y_file in y_files:
                 start1 = time.time()
-                original = open_image(y_file)
+                # Load Image (JPEG/JPG needs libjpeg to load)
+                original_image = Img.open(y_file)
                 print(f'Open: {time.time() - start1:0.4f} seconds')
 
                 # convert to hypsometric
                 start2 = time.time()
-                new = terrarium_to_hypsometric(original)
+                new_image = terrarium_to_hypsometric(original_image)
                 print(f'Calculation: {time.time() - start2:0.4f} seconds')
 
                 # create folder if not exists
@@ -109,7 +95,7 @@ if __name__ == '__main__':
                 hyp_x_dir.mkdir(parents=True, exist_ok=True)
                 # get path
                 hyp_y_file = change_folder_in_path(y_file, 1, foldername)
-                save_image(new, hyp_y_file)
+                new_image.save(hyp_y_file, 'png')
                 print(f'Write: {time.time() - start3:0.4f} seconds')
                 print('---------------------------------')
                 n = n + 1
