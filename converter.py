@@ -4,14 +4,18 @@ from pathlib import Path
 import numpy as np
 import PIL.Image as Img
 
-stops = np.array([-11500, -100, 300, 1000, 3000, 9000]) # color stops in meter altitude
+dirname = Path('planet/terrarium') # path to source files
+foldername = 'hypsometric' # foldername to replace "terrarium" in output
+
+stops = np.array([-11000, -100, 300, 1000, 3000, 6000, 8900]) # color stops in meter altitude
 colors = np.array([
     [42, 29, 49],
     [70, 133, 155],
     [2, 98, 71],
     [212, 195, 109],
     [125, 38, 36],
-    [255, 255, 255]
+    [255, 255, 255],
+    [209, 249, 255]
 ])
 
 
@@ -50,7 +54,13 @@ def terrarium_to_hypsometric(image: Img.Image) -> Img.Image:
     data = np.array(image)
     assert data.shape[0] == data.shape[1]
 
-    data =  get_hypsometric_color(get_elevation(data))
+    data = get_elevation(data)
+
+    # enforce lower and upper bound
+    data[data < stops[0]] = stops[0] + 1
+    data[data > stops[-1]] = stops[-1] - 1
+
+    data = get_hypsometric_color(data)
     img = Img.fromarray(data, 'RGB')
     return img
 
@@ -67,9 +77,7 @@ def change_folder_in_path(path: Path, position: int, foldername: str) -> Path:
 
 if __name__ == '__main__':
     n = 0
-    foldername = 'hypsometric'
     start = time.time()
-    dirname = Path('data/terrarium')
     zoom_dirs = [f for f in dirname.iterdir() if f.is_dir()]
     
     for zoom_dir in zoom_dirs:
@@ -82,13 +90,14 @@ if __name__ == '__main__':
             for y_file in y_files:
                 start1 = time.time()
                 # Load Image (JPEG/JPG needs libjpeg to load)
+                print(f'Start with {y_file}')
                 original_image = Img.open(y_file)
-                print(f'Open: {time.time() - start1:0.4f} seconds')
+                # print(f'Open: {time.time() - start1:0.4f} seconds')
 
                 # convert to hypsometric
                 start2 = time.time()
                 new_image = terrarium_to_hypsometric(original_image)
-                print(f'Calculation: {time.time() - start2:0.4f} seconds')
+                # print(f'Calculation: {time.time() - start2:0.4f} seconds')
 
                 # create folder if not exists
                 start3 = time.time()
@@ -96,8 +105,8 @@ if __name__ == '__main__':
                 # get path
                 hyp_y_file = change_folder_in_path(y_file, 1, foldername)
                 new_image.save(hyp_y_file, 'png')
-                print(f'Write: {time.time() - start3:0.4f} seconds')
-                print('---------------------------------')
+                # print(f'Write: {time.time() - start3:0.4f} seconds')
+                # print('---------------------------------')
                 n = n + 1
         
     print('----------------------------------------------')
