@@ -3,6 +3,18 @@ import math
 import time
 from PIL import Image
 from pathlib import Path
+import numpy as np
+
+stops = [-11500, -100, 300, 1000, 3000, 9000] # color stops in meter altitude
+colors = [
+    [42, 29, 49],
+    [70, 133, 155],
+    [2, 98, 71],
+    [212, 195, 109],
+    [125, 38, 36],
+    [255, 255, 255]
+]
+
 
 # Open an Image
 def open_image(path):
@@ -32,14 +44,7 @@ def get_pixel(image, i, j):
     return pixel
 
 def get_elevation(pixel):
-    # Get R, G, B values (This are int from 0 to 255)
-    red =   pixel[0]
-    green = pixel[1]
-    blue =  pixel[2]
-
-    elevation = (red * 256 + green + blue / 256) - 32768
-
-    return elevation
+    return (pixel[0] * 256 + pixel[1] + pixel[2] / 256) - 32768
 
 
 def normalize(min, max, val):
@@ -47,21 +52,12 @@ def normalize(min, max, val):
 
 
 def blend_color_val(a, b, t):
+    # ~20% of Calculation workload
     blended = math.sqrt((1 - t) * a*a + t * b*b)
     return round(blended)
 
 
 def get_hypsometric_color(ele):
-    stops = [-11500, -100, 300, 1000, 3000, 9000] # color stops in meter altitude
-    colors = [
-        [42, 29, 49],
-        [70, 133, 155],
-        [2, 98, 71],
-        [212, 195, 109],
-        [125, 38, 36],
-        [255, 255, 255]
-    ]
-    
     hyp = [0, 0, 0] # result: blended colors
     color1 = [0, 0, 0] # color 1 to blend
     color2 = [0, 0, 0] # color 2 to blend
@@ -86,29 +82,18 @@ def get_hypsometric_color(ele):
         
         
 def terrarium_to_hypsometric(image):
-    width, height = image.size
+    # convert image to 3D numpy array (size * size * 3)
+    data = np.array(image)
+    size = len(data) # assume image is square
 
-    # Create new Image and a Pixel Map
-    new = create_image(width, height)
-    pixels = new.load()
-
-    # Transform to hypsometric
-    for i in range(width):
-        for j in range(height):
-            # get pixel
-            pixel = get_pixel(image, i, j)
-
-            # get elevation from pixel rgb values
-            elevation = get_elevation(pixel)
-
-            # get hypsometric color form elevation
-            hypsometric = get_hypsometric_color(elevation)
-
-            # set pixel in new image
-            pixels[i, j] = (hypsometric[0], hypsometric[1], hypsometric[2])
+    for i in range(size):
+        for j in range(size):
+            # ~80% of Calculation workload
+            # TODO: Vectorize? Does not work out of the box maybe due to dimension reduction and expansion
+            data[i][j] = get_hypsometric_color(get_elevation(data[i][j]))
 
     # return new image
-    return new
+    return Image.fromarray(data, 'RGB')
 
 def change_folder_in_path(path, position, foldername):
     # split in parts
@@ -132,7 +117,7 @@ if __name__ == "__main__":
     tic = time.perf_counter()
 
     # Load Image (JPEG/JPG needs libjpeg to load)
-    
+
     dirname = Path("data/terrarium")
     zoom_dirs = [f for f in dirname.iterdir() if f.is_dir()]
     
@@ -144,18 +129,29 @@ if __name__ == "__main__":
             hyp_x_dir = change_folder_in_path(x_dir, 1, foldername)
 
             for y_file in y_files:
+                tic1 = time.perf_counter()
                 original = open_image(y_file)
+                toc1 = time.perf_counter()
+                print(f"Open: {toc1 - tic1:0.4f} seconds")
 
                 # convert to hypsometric
+                tic2 = time.perf_counter()
                 new = terrarium_to_hypsometric(original)
+                toc2 = time.perf_counter()
+                print(f"Calculation: {toc2 - tic2:0.4f} seconds")
+
                 # create folder if not exists
-                
+                tic3 = time.perf_counter()
                 hyp_x_dir.mkdir(parents=True, exist_ok=True)
                 # get path
                 hyp_y_file = change_folder_in_path(y_file, 1, foldername)
                 save_image(new, hyp_y_file)
+                toc3 = time.perf_counter()
+                print(f"Write: {toc3 - tic3:0.4f} seconds")
+                print("---------------------------------")
                 n = n + 1
     
     toc = time.perf_counter()
     
+    print("----------------------------------------------")
     print(f"Converted {n} tiles in {toc - tic:0.4f} seconds")
