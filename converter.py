@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import PIL.Image as Img
 
-dirname = Path('planet/terrarium') # path to source files
+dirname = Path('data/terrarium') # path to source files
 foldername = 'hypsometric' # foldername to replace "terrarium" in output
 
 stops = np.array([-11000, -50, 30, 800, 2000, 4800, 7200]) # color stops in meter altitude
@@ -57,8 +57,8 @@ def terrarium_to_hypsometric(image: Img.Image) -> Img.Image:
     data = get_elevation(data)
 
     # enforce lower and upper bound
-    data[data < stops[0]] = stops[0] + 1
-    data[data > stops[-1]] = stops[-1] - 1
+    data[data <= stops[0]] = stops[0] + 1
+    data[data >= stops[-1]] = stops[-1] - 1
 
     data = get_hypsometric_color(data)
     img = Img.fromarray(data, 'RGB')
@@ -88,6 +88,8 @@ if __name__ == '__main__':
             hyp_x_dir = change_folder_in_path(x_dir, 1, foldername)
 
             for y_file in y_files:
+                hyp_y_file = change_folder_in_path(y_file, 1, foldername)
+                if hyp_y_file.is_file(): continue
                 start1 = time.time()
                 # Load Image (JPEG/JPG needs libjpeg to load)
                 print(f'Start with {y_file}')
@@ -103,7 +105,6 @@ if __name__ == '__main__':
                 start3 = time.time()
                 hyp_x_dir.mkdir(parents=True, exist_ok=True)
                 # get path
-                hyp_y_file = change_folder_in_path(y_file, 1, foldername)
                 new_image.save(hyp_y_file, 'png')
                 # print(f'Write: {time.time() - start3:0.4f} seconds')
                 # print('---------------------------------')
