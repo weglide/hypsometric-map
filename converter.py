@@ -7,7 +7,7 @@ import PIL.Image as Img
 dirname = Path('planet/terrarium') # path to source files
 foldername = 'hypsometric' # foldername to replace "terrarium" in output
 
-stops = np.array([-11000, -100, 300, 1000, 3000, 6000, 8900]) # color stops in meter altitude
+stops = np.array([-11000, -50, 30, 800, 2000, 4800, 7200]) # color stops in meter altitude
 colors = np.array([
     [42, 29, 49],
     [70, 133, 155],
@@ -15,7 +15,7 @@ colors = np.array([
     [212, 195, 109],
     [125, 38, 36],
     [255, 255, 255],
-    [209, 249, 255]
+    [199, 239, 255]
 ])
 
 
