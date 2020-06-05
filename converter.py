@@ -25,11 +25,6 @@ def save_image(image: Img.Image, path: Path) -> None:
     image.save(path, 'png')
 
 
-# Create a new image with the given size
-def create_image(i: int, j: int) -> Img.Image:
-    return Img.new("RGB", (i, j), "white")
-
-
 def get_elevation(array: np.ndarray) -> np.ndarray:
     elevation = (array[:,:,0] * 256 + array[:,:,1] + array[:,:,2] / 256) - 32768
     return elevation
@@ -41,11 +36,11 @@ def normalize(lower_bound: np.ndarray, upper_bound: np.ndarray, val: np.ndarray)
 
 def blend_color_val(a: np.ndarray, b: np.ndarray, t: np.ndarray) -> np.ndarray:
     blended = np.sqrt((1 - t) * a*a + t * b*b)
-    return np.rint(blended).astype('int')
+    return np.rint(blended).astype(np.uint8)
 
 
 def get_hypsometric_color(elevation: np.ndarray) -> np.ndarray:
-    hyp = np.zeros((elevation.shape[0], elevation.shape[1], 3))
+    hyp = np.zeros((elevation.shape[0], elevation.shape[1], 3), dtype=np.uint8)
     # catch invalid elevation values
     assert stops[0] < elevation.all() <= stops[-1]
 
@@ -67,7 +62,8 @@ def terrarium_to_hypsometric(image: Img.Image) -> Img.Image:
     assert data.shape[0] == data.shape[1]
 
     data =  get_hypsometric_color(get_elevation(data))
-    return Img.fromarray(data, 'RGB')
+    img = Img.fromarray(data, 'RGB')
+    return img
 
 
 def change_folder_in_path(path: Path, position: int, foldername: str) -> Path:
