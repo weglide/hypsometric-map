@@ -81,6 +81,27 @@ def hillshade(array, azimuth, angle_altitude):
     return 255 * (shaded + 1) / 2
 
 
+def merge_tiles(im1, im2, im3, im4):
+    dst = Image.new('RGB', (im1.width * 2, im1.height * 2))
+    dst.paste(im1, (0, 0))
+    dst.paste(im2, (im1.width, 0))
+    dst.paste(im3, (0, im1.height))
+    dst.paste(im4, (im1.width, im1.height))
+    return dst
+
+
+def compress_tile(img, size):
+    return img.resize((size, size), Image.ANTIALIAS)
+
+
+def save(img, path):
+    # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#webp
+    # quality is in percent from 0 to 100
+    # method is quality/speed tradeoff from 0 (fast) to 6
+    # webp works everywhere except for safari. MAybe use jpeg 2000 for safari?
+    return img.save(path, 'WEBP', quality=80, method=4) 
+
+
 def change_folder_in_path(path: Path, position: int, foldername: str) -> Path:
     # split in parts
     parts = list(path.parts)
