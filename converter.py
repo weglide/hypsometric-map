@@ -65,6 +65,22 @@ def terrarium_to_hypsometric(image: Img.Image) -> Img.Image:
     return img
 
 
+def hillshade(array, azimuth, angle_altitude):
+    azimuth = 360.0 - azimuth 
+    
+    x, y = np.gradient(array)
+    slope = np.pi / 2. - np.arctan(np.sqrt(x * x + y * y))
+    aspect = np.arctan2(-x, y)
+    azimuthrad = azimuth * np.pi / 180.
+    altituderad = angle_altitude * np.pi / 180.
+     
+ 
+    shaded = np.sin(altituderad) * np.sin(slope) \
+     + np.cos(altituderad) * np.cos(slope) \
+     * np.cos((azimuthrad - np.pi / 2.) - aspect)
+    return 255 * (shaded + 1) / 2
+
+
 def change_folder_in_path(path: Path, position: int, foldername: str) -> Path:
     # split in parts
     parts = list(path.parts)
