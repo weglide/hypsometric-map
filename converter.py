@@ -15,7 +15,7 @@ class Color:
     foldername = 'hypsometric' # foldername to replace "terrarium" in output
     hd_foldername = 'hd_terrarium' # foldername to replace hd data
 
-    land_colors = np.array([
+    land_colors_old = np.array([
         [0, 0, 81],
         [0, 174, 162],
         [40, 98, 45],
@@ -27,26 +27,30 @@ class Color:
         [255, 255, 255],
         [154, 206, 227],
     ])
+    land_colors = np.array([
+        [0, 0, 81],
+        [0, 174, 162],
+        [59, 123, 65],
+        [117, 169, 97],
+        [231, 226, 162],
+        [205, 159, 67],
+        [183, 108, 93],
+        [165, 120, 165],
+        [200, 200, 200],
+        [255, 255, 255],
+        [171, 231, 255],
+    ])
     
 
-    def __init__(self, interpolate: bool=True, hd: bool=False, upscale: bool=False):
+    def __init__(self, interpolate: bool=True, hd: bool=False, hillshade: bool=False, hillshade_intensity: float=0.1):
         self.interpolate = interpolate
         self.hd = hd
-        self.upscale = upscale
+        self.hillshade = hillshade
+        self.hillshade_intensity = hillshade_intensity
 
     def make_stops(self):
-        self.land_stops = np.array([-8000, -40, 0, 200, 700, 1500, 2500, 3000, 3800, 6800])
-
-    def upscale_colors(self):
-        colors = self.land_colors
-        new_length = colors.shape[0]*2-1
-        new_colors = np.zeros((new_length, 3))
-        for i in range(new_colors.shape[0]):
-            if not (i % 2):
-                new_colors[i] = colors[int(i/2)]
-            else:
-                new_colors[i,:] = (colors[int((i-1)/2)] + colors[int((i+1)/2)]) / 2
-        self.land_colors = new_colors
+        self.land_stops_old = np.array([-8000, -40, 0, 200, 700, 1500, 2500, 3000, 3800, 6800])
+        self.land_stops = np.array([-8000, -40, 0, 200, 650, 1300, 2100, 2500, 3000, 3800, 6800])
 
     def get_elevation(self, array: np.ndarray) -> np.ndarray:
         return (array[:,:,0] * 256 + array[:,:,1] + array[:,:,2] / 256) - 32768
@@ -83,29 +87,37 @@ class Color:
         data = np.array(image)
         assert data.shape[0] == data.shape[1]
 
-        data = self.get_elevation(data)
+        elevation = self.get_elevation(data)
 
         # enforce lower and upper bound
-        data[data <= self.land_stops[0]] = self.land_stops[0] + 1
-        data[data >= self.land_stops[-1]] = self.land_stops[-1] - 1
+        elevation[elevation <= self.land_stops[0]] = self.land_stops[0] + 1
+        elevation[elevation >= self.land_stops[-1]] = self.land_stops[-1] - 1
 
-        data = self.get_hypsometric_color(data)
+        data = self.get_hypsometric_color(elevation)
+        if self.hillshade:
+            hillshade = self.get_hillshade(elevation)
+            for i in range(3):
+                data[:,:,i] = data[:,:,i] * (1-self.hillshade_intensity + hillshade*self.hillshade_intensity)
+
         img = Img.fromarray(data, 'RGB')
         return img
 
-    def hillshade(self, array, azimuth, angle_altitude):
+    def get_hillshade(self, array: np.ndarray, azimuth: float=315, angle_altitude: float=45) -> np.ndarray:
         azimuth = 360.0 - azimuth 
         
         x, y = np.gradient(array)
         slope = np.pi / 2. - np.arctan(np.sqrt(x * x + y * y))
         aspect = np.arctan2(-x, y)
-        azimuth_rad = azimuth * np.pi / 180.
-        altitude_rad = angle_altitude * np.pi / 180.
+        azimuth_rad = np.radians(azimuth)
+        altitude_rad = np.radians(angle_altitude)
         
         shaded = np.sin(altitude_rad) * np.sin(slope) \
         + np.cos(altitude_rad) * np.cos(slope) \
         * np.cos((azimuth_rad - np.pi / 2.) - aspect)
-        return 255 * (shaded + 1) / 2
+
+        # return 255 * (shaded + 1) / 2
+        return (shaded + 1) / 2
+        
 
     def merge_tiles(self):
         n: int = 0
@@ -187,9 +199,6 @@ class Color:
         return childs
 
     def run(self):
-        if self.upscale:
-            self.upscale_colors()
-            self.upscale_colors()
         
         # determine bins
         self.make_stops()
@@ -214,19 +223,16 @@ class Color:
                     # Load Image (JPEG/JPG needs libjpeg to load)
                     print(f'Start with {y_file}')
                     original_image = Img.open(y_file)
-                    # print(f'Open: {time.time() - start1:0.4f} seconds')
 
                     # convert to hypsometric
-                    start2 = time.time()
                     new_image = self.terrarium_to_hypsometric(original_image)
-                    # print(f'Calculation: {time.time() - start2:0.4f} seconds')
 
                     # create folder if not exists
-                    start3 = time.time()
                     # get path
-                    new_image.save(hyp_y_file, 'png')
-                    # print(f'Write: {time.time() - start3:0.4f} seconds')
-                    # print('---------------------------------')
+                    # new_image.save(hyp_y_file, 'png')
+
+                    new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=46, subsampling=0, optimize=True, progressive=False)
+
                     n += 1
             
         print('----------------------------------------------')
@@ -234,6 +240,6 @@ class Color:
 
 
 if __name__ == '__main__':
-    color = Color(hd=True)
+    color = Color(hd=True, hillshade=True)
     # color.merge_tiles()
     color.run()
