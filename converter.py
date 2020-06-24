@@ -18,6 +18,33 @@ colors = np.array([
     [199, 239, 255]
 ])
 
+# land_stops = np.insert(
+#     np.logspace(np.log(100)/np.log(1.5), np.log(7200)/np.log(1.5), 7, base=1.5),
+#     0,
+#     0,
+# )
+land_stops = np.logspace(np.log(100)/np.log(1.5), np.log(7200)/np.log(1.5), 7, base=1.5)
+land_colors = np.array([
+    [0, 204, 146],
+    [0, 163, 92],
+    [224, 235, 124],
+    [184, 106, 61],
+    [166, 58, 110],
+    [184, 184, 184],
+    [255, 255, 255],
+    [173, 232, 255],
+])
+
+def upscale_colors(colors: np.ndarray) -> np.ndarray:
+    new_length = colors.shape[0]*2-1
+    new_colors = np.zeros((new_length, 3))
+    for i in range(new_colors.shape[0]):
+        if not (i % 2):
+            new_colors[i] = colors[int(i/2)]
+        else:
+            new_colors[i,:] = (colors[int((i-1)/2)] + colors[int((i+1)/2)]) / 2
+    return new_colors
+
 
 def get_elevation(array: np.ndarray) -> np.ndarray:
     return (array[:,:,0] * 256 + array[:,:,1] + array[:,:,2] / 256) - 32768
@@ -32,20 +59,23 @@ def blend_color_val(a: np.ndarray, b: np.ndarray, t: np.ndarray) -> np.ndarray:
     return np.rint(blended).astype(np.uint8)
 
 
-def get_hypsometric_color(elevation: np.ndarray) -> np.ndarray:
+def get_hypsometric_color(elevation: np.ndarray, blend: bool=False) -> np.ndarray:
     hyp = np.zeros((elevation.shape[0], elevation.shape[1], 3), dtype=np.uint8)
     # catch invalid elevation values
     assert stops[0] < elevation.all() <= stops[-1]
 
-    bins = np.digitize(elevation, stops) - 1
-    pos = normalize(stops[bins], stops[bins + 1], elevation)
+    bins = np.digitize(elevation, land_stops) - 1
+    # pos = normalize(stops[bins], stops[bins + 1], elevation)
     color1 = colors[bins]
-    color2 = colors[bins + 1]
+    # color2 = colors[bins + 1]
 
     # blend rgb values
     for i in range(3):
-        hyp[:,:,i] = blend_color_val(color1[:,:,i], color2[:,:,i], pos)
-        
+    #     if blend:
+    #         hyp[:,:,i] = blend_color_val(color1[:,:,i], color2[:,:,i], pos)
+    #     else:
+        hyp[:,:,i] = color1[:,:,i]
+
     return hyp
         
         
@@ -71,18 +101,18 @@ def hillshade(array, azimuth, angle_altitude):
     x, y = np.gradient(array)
     slope = np.pi / 2. - np.arctan(np.sqrt(x * x + y * y))
     aspect = np.arctan2(-x, y)
-    azimuthrad = azimuth * np.pi / 180.
-    altituderad = angle_altitude * np.pi / 180.
+    azimuth_rad = azimuth * np.pi / 180.
+    altitude_rad = angle_altitude * np.pi / 180.
      
  
-    shaded = np.sin(altituderad) * np.sin(slope) \
-     + np.cos(altituderad) * np.cos(slope) \
-     * np.cos((azimuthrad - np.pi / 2.) - aspect)
+    shaded = np.sin(altitude_rad) * np.sin(slope) \
+     + np.cos(altitude_rad) * np.cos(slope) \
+     * np.cos((azimuth_rad - np.pi / 2.) - aspect)
     return 255 * (shaded + 1) / 2
 
 
 def merge_tiles(im1, im2, im3, im4):
-    dst = Image.new('RGB', (im1.width * 2, im1.height * 2))
+    dst = Img.new('RGB', (im1.width * 2, im1.height * 2))
     dst.paste(im1, (0, 0))
     dst.paste(im2, (im1.width, 0))
     dst.paste(im3, (0, im1.height))
@@ -91,7 +121,7 @@ def merge_tiles(im1, im2, im3, im4):
 
 
 def compress_tile(img, size):
-    return img.resize((size, size), Image.ANTIALIAS)
+    return img.resize((size, size), Img.ANTIALIAS)
 
 
 def save(img, path):
