@@ -42,7 +42,7 @@ class Color:
     ])
     
 
-    def __init__(self, interpolate: bool=True, hd: bool=False, hillshade: bool=False, hillshade_intensity: float=0.1):
+    def __init__(self, interpolate: bool=True, hd: bool=False, hillshade: bool=False, hillshade_intensity: float=0.25):
         self.interpolate = interpolate
         self.hd = hd
         self.hillshade = hillshade
@@ -241,5 +241,5 @@ class Color:
 
 if __name__ == '__main__':
     color = Color(hd=True, hillshade=True)
-    # color.merge_tiles()
+    color.merge_tiles()
     color.run()
