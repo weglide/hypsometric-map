@@ -43,11 +43,10 @@ class Color:
     ])
     
 
-    def __init__(self, interpolate: bool=True, hd: bool=False, hillshade: bool=False, hillshade_intensity: float=0.2):
+    def __init__(self, interpolate: bool=True, hd: bool=False, hillshade: bool=False):
         self.interpolate = interpolate
         self.hd = hd
         self.hillshade = hillshade
-        self.hillshade_intensity = hillshade_intensity
 
     def make_stops(self):
         self.land_stops_old = np.array([-8000, -40, 0, 200, 700, 1500, 2500, 3000, 3800, 6800])
@@ -82,8 +81,11 @@ class Color:
                 hyp[:,:,i] = color1[:,:,i]
 
         return hyp
+
+    def linear_intensity(self, x, y_0=0.1, m=0.03):
+        return y_0 + x*m
         
-    def terrarium_to_hypsometric(self, image: Img.Image) -> Img.Image:
+    def terrarium_to_hypsometric(self, image: Img.Image, zl: int) -> Img.Image:
         # convert image to 3D numpy array (size * size * 3)
         data = np.array(image)
         assert data.shape[0] == data.shape[1]
@@ -97,8 +99,9 @@ class Color:
         data = self.get_hypsometric_color(elevation)
         if self.hillshade:
             hillshade = self.get_hillshade(elevation)
+            intensity = self.linear_intensity(zl)
             for i in range(3):
-                data[:,:,i] = data[:,:,i] * (1-self.hillshade_intensity + hillshade*self.hillshade_intensity)
+                data[:,:,i] = data[:,:,i] * (1-intensity + hillshade*intensity)
 
         img = Img.fromarray(data, 'RGB')
         return img
@@ -222,6 +225,11 @@ class Color:
         for zoom_dir in zoom_dirs:
             x_dirs = [f for f in zoom_dir.iterdir() if f.is_dir()]
 
+            # determine zoom level
+            zl_position: int = 2
+            parts = list(zoom_dir.parts)
+            zl = int(parts[zl_position])
+
             for x_dir in x_dirs:
                 y_files = [f for f in x_dir.iterdir() if f.is_file()]
                 hyp_x_dir = self.change_folder_in_path(x_dir, 1, self.foldername)
@@ -230,13 +238,12 @@ class Color:
                 for y_file in y_files:
                     hyp_y_file = self.change_folder_in_path(y_file, 1, self.foldername)
                     if hyp_y_file.is_file(): continue
-                    start1 = time.time()
                     # Load Image (JPEG/JPG needs libjpeg to load)
                     print(f'Start with {y_file}')
                     original_image = Img.open(y_file)
 
                     # convert to hypsometric
-                    new_image = self.terrarium_to_hypsometric(original_image)
+                    new_image = self.terrarium_to_hypsometric(original_image, zl)
 
                     # create folder if not exists
                     # get path
