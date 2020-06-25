@@ -43,7 +43,7 @@ class Color:
     ])
     
 
-    def __init__(self, interpolate: bool=True, hd: bool=False, hillshade: bool=False, hillshade_intensity: float=0.15):
+    def __init__(self, interpolate: bool=True, hd: bool=False, hillshade: bool=False, hillshade_intensity: float=0.2):
         self.interpolate = interpolate
         self.hd = hd
         self.hillshade = hillshade
