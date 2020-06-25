@@ -5,6 +5,7 @@ from typing import List
 
 import numpy as np
 import PIL.Image as Img
+from tqdm import tqdm
 
 
 
@@ -82,7 +83,7 @@ class Color:
 
         return hyp
 
-    def linear_intensity(self, x, y_0=0.1, m=0.03):
+    def linear_intensity(self, x, y_0=0.0, m=0.015):
         return y_0 + x*m
         
     def terrarium_to_hypsometric(self, image: Img.Image, zl: int) -> Img.Image:
@@ -101,12 +102,12 @@ class Color:
             hillshade = self.get_hillshade(elevation)
             intensity = self.linear_intensity(zl)
             for i in range(3):
-                data[:,:,i] = data[:,:,i] * (1-intensity + hillshade*intensity)
-
+                # data[:,:,i] = data[:,:,i] * (1-intensity + hillshade*intensity)
+                data[:,:,i] = np.minimum(np.maximum(data[:,:,i]+hillshade*255*intensity, 0), 255)
         img = Img.fromarray(data, 'RGB')
         return img
 
-    def get_hillshade(self, array: np.ndarray, azimuth: float=315, altitude: float=60) -> np.ndarray:
+    def get_hillshade(self, array: np.ndarray, azimuth: float=315, altitude: float=70) -> np.ndarray:
         # azimuth = 360.0 - azimuth 
         
         # x, y = np.gradient(array)
@@ -129,7 +130,8 @@ class Color:
                  (np.sin(zenith) * np.sin(slope) * np.cos(azimuth_rad - aspect)))
 
         # return 255 * (shaded + 1) / 2
-        return (shaded + 1) / 2
+        # return (shaded + 1) / 2
+        return shaded
 
     def merge_tiles(self):
         n: int = 0
@@ -229,8 +231,9 @@ class Color:
             zl_position: int = 2
             parts = list(zoom_dir.parts)
             zl = int(parts[zl_position])
+            print(f'Zoomlevel: {zl}')
 
-            for x_dir in x_dirs:
+            for x_dir in tqdm(x_dirs):
                 y_files = [f for f in x_dir.iterdir() if f.is_file()]
                 hyp_x_dir = self.change_folder_in_path(x_dir, 1, self.foldername)
                 hyp_x_dir.mkdir(parents=True, exist_ok=True)
@@ -239,7 +242,7 @@ class Color:
                     hyp_y_file = self.change_folder_in_path(y_file, 1, self.foldername)
                     if hyp_y_file.is_file(): continue
                     # Load Image (JPEG/JPG needs libjpeg to load)
-                    print(f'Start with {y_file}')
+                    # print(f'Start with {y_file}')
                     original_image = Img.open(y_file)
 
                     # convert to hypsometric
