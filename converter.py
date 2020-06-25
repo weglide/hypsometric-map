@@ -117,7 +117,6 @@ class Color:
 
         # return 255 * (shaded + 1) / 2
         return (shaded + 1) / 2
-        
 
     def merge_tiles(self):
         n: int = 0
@@ -125,7 +124,6 @@ class Color:
         zoom_dirs = [f for f in self.dirname.iterdir() if f.is_dir()]
         zoom_dirs.sort()
         # we can not merge for highest zoom level
-        print(zoom_dirs)
         for zoom_dir in zoom_dirs[:-1]:
             x_dirs_lower = [f for f in zoom_dir.iterdir() if f.is_dir()]
             for x_dir in x_dirs_lower:
@@ -209,6 +207,7 @@ class Color:
         start = time.time()
         dirname = self.dirname if not self.hd else self.hd_dirname
         zoom_dirs = [f for f in dirname.iterdir() if f.is_dir()]
+        zoom_dirs.sort()
         
         for zoom_dir in zoom_dirs:
             x_dirs = [f for f in zoom_dir.iterdir() if f.is_dir()]
