@@ -42,16 +42,13 @@ class Color:
         [255, 255, 255],
         [171, 231, 255],
     ])
-    
+
+    land_stops = np.array([-8000, -40, 0, 220, 700, 1300, 2100, 2500, 3000, 3800, 6800])
 
     def __init__(self, interpolate: bool=True, hd: bool=False, hillshade: bool=False):
         self.interpolate = interpolate
         self.hd = hd
         self.hillshade = hillshade
-
-    def make_stops(self):
-        self.land_stops_old = np.array([-8000, -40, 0, 200, 700, 1500, 2500, 3000, 3800, 6800])
-        self.land_stops = np.array([-8000, -40, 0, 220, 700, 1300, 2100, 2500, 3000, 3800, 6800])
 
     def get_elevation(self, array: np.ndarray) -> np.ndarray:
         return (array[:,:,0] * 256 + array[:,:,1] + array[:,:,2] / 256) - 32768
@@ -224,7 +221,7 @@ class Color:
         zoom_dirs = [f for f in dirname.iterdir() if f.is_dir()]
         zoom_dirs.sort()
         
-        for zoom_dir in zoom_dirs:
+        for i, zoom_dir in enumerate(zoom_dirs):
             x_dirs = [f for f in zoom_dir.iterdir() if f.is_dir()]
 
             # determine zoom level
@@ -248,12 +245,11 @@ class Color:
                     # convert to hypsometric
                     new_image = self.terrarium_to_hypsometric(original_image, zl)
 
-                    # create folder if not exists
-                    # get path
-                    # new_image.save(hyp_y_file, 'png')
-
-                    new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=46, subsampling=0, optimize=True, progressive=False)
-
+                    # save last zoomlevel with better quality
+                    if i == len(zoom_dirs)-1:
+                        new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=85, subsampling=0, optimize=True, progressive=False)
+                    else:
+                        new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=46, subsampling=0, optimize=True, progressive=False)
                     n += 1
             
         print('----------------------------------------------')
