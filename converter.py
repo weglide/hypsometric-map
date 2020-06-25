@@ -123,7 +123,9 @@ class Color:
         n: int = 0
         start = time.time()
         zoom_dirs = [f for f in self.dirname.iterdir() if f.is_dir()]
+        zoom_dirs.sort()
         # we can not merge for highest zoom level
+        print(zoom_dirs)
         for zoom_dir in zoom_dirs[:-1]:
             x_dirs_lower = [f for f in zoom_dir.iterdir() if f.is_dir()]
             for x_dir in x_dirs_lower:
