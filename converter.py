@@ -102,18 +102,27 @@ class Color:
         img = Img.fromarray(data, 'RGB')
         return img
 
-    def get_hillshade(self, array: np.ndarray, azimuth: float=315, angle_altitude: float=45) -> np.ndarray:
-        azimuth = 360.0 - azimuth 
+    def get_hillshade(self, array: np.ndarray, azimuth: float=315, altitude: float=70) -> np.ndarray:
+        # azimuth = 360.0 - azimuth 
         
+        # x, y = np.gradient(array)
+        # slope = np.arctan(np.sqrt(x * x + y * y))
+        # aspect = np.arctan2(-x, y)
+        # azimuth_rad = np.radians(azimuth)
+        # altitude_rad = np.radians(altitude)
+        
+        # shaded = np.sin(altitude_rad) * np.sin(slope) \
+        # + np.cos(altitude_rad) * np.cos(slope) \
+        # * np.cos((azimuth_rad - np.pi / 2.) - aspect)
+
         x, y = np.gradient(array)
-        slope = np.pi / 2. - np.arctan(np.sqrt(x * x + y * y))
-        aspect = np.arctan2(-x, y)
-        azimuth_rad = np.radians(azimuth)
-        altitude_rad = np.radians(angle_altitude)
-        
-        shaded = np.sin(altitude_rad) * np.sin(slope) \
-        + np.cos(altitude_rad) * np.cos(slope) \
-        * np.cos((azimuth_rad - np.pi / 2.) - aspect)
+        slope = np.arctan(np.sqrt(x*x + y*y))
+        aspect = np.arctan2(y, -x)
+        azimuth_math = (360. - azimuth + 90.) % 360.
+        azimuth_rad = np.radians(azimuth_math)
+        zenith = np.radians(90 - altitude)
+        shaded = ((np.cos(zenith) * np.cos(slope)) +
+                 (np.sin(zenith) * np.sin(slope) * np.cos(azimuth_rad - aspect)))
 
         # return 255 * (shaded + 1) / 2
         return (shaded + 1) / 2
@@ -242,5 +251,5 @@ class Color:
 
 if __name__ == '__main__':
     color = Color(hd=True, hillshade=True)
-    color.merge_tiles()
+    # color.merge_tiles()
     color.run()
