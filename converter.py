@@ -18,18 +18,6 @@ class Color:
     land_colors_old = np.array([
         [0, 0, 81],
         [0, 174, 162],
-        [40, 98, 45],
-        [113, 170, 92],
-        [237, 231, 139],
-        [156, 116, 37],
-        [158, 82, 66],
-        [184, 184, 184],
-        [255, 255, 255],
-        [154, 206, 227],
-    ])
-    land_colors = np.array([
-        [0, 0, 81],
-        [0, 174, 162],
         [59, 123, 65],
         [117, 169, 97],
         [231, 226, 162],
@@ -40,9 +28,22 @@ class Color:
         [255, 255, 255],
         [171, 231, 255],
     ])
+    land_colors = np.array([
+        [0, 0, 81],
+        [0, 174, 162],
+        [59, 123, 65],
+        [102, 170, 75],
+        [238, 233, 158],
+        [205, 159, 67],
+        [183, 108, 93],
+        [149, 108, 149],
+        [204, 204, 204],
+        [255, 255, 255],
+        [171, 231, 255],
+    ])
     
 
-    def __init__(self, interpolate: bool=True, hd: bool=False, hillshade: bool=False, hillshade_intensity: float=0.25):
+    def __init__(self, interpolate: bool=True, hd: bool=False, hillshade: bool=False, hillshade_intensity: float=0.15):
         self.interpolate = interpolate
         self.hd = hd
         self.hillshade = hillshade
@@ -50,7 +51,7 @@ class Color:
 
     def make_stops(self):
         self.land_stops_old = np.array([-8000, -40, 0, 200, 700, 1500, 2500, 3000, 3800, 6800])
-        self.land_stops = np.array([-8000, -40, 0, 200, 650, 1300, 2100, 2500, 3000, 3800, 6800])
+        self.land_stops = np.array([-8000, -40, 0, 220, 700, 1300, 2100, 2500, 3000, 3800, 6800])
 
     def get_elevation(self, array: np.ndarray) -> np.ndarray:
         return (array[:,:,0] * 256 + array[:,:,1] + array[:,:,2] / 256) - 32768
@@ -102,7 +103,7 @@ class Color:
         img = Img.fromarray(data, 'RGB')
         return img
 
-    def get_hillshade(self, array: np.ndarray, azimuth: float=315, altitude: float=70) -> np.ndarray:
+    def get_hillshade(self, array: np.ndarray, azimuth: float=315, altitude: float=60) -> np.ndarray:
         # azimuth = 360.0 - azimuth 
         
         # x, y = np.gradient(array)
