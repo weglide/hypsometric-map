@@ -213,7 +213,7 @@ class Color:
     def run(self):
         
         # determine bins
-        self.make_stops()
+        # self.make_stops()
 
         n = 0
         start = time.time()
