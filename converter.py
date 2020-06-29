@@ -8,13 +8,24 @@ import PIL.Image as Img
 from tqdm import tqdm
 
 
+# WGS 84, 1979
+pol_radius: float = 6356752.314
+equator_radius: float = 6378137.0
+
 
 class Color:
     dirname = Path('planet/terrarium') # path to source files
     hd_dirname = Path('planet/hd_terrarium') # path to hd source files
 
-    foldername = 'hypsometric' # foldername to replace "terrarium" in output
-    hd_foldername = 'hd_terrarium' # foldername to replace hd data
+    foldername: str = 'hypsometric' # foldername to replace "terrarium" in output
+    hd_foldername: str = 'hd_terrarium' # foldername to replace hd data
+
+    zl_position: int = 2
+    x_position: int = 3
+    y_position: int = 4
+
+    meters_per_degree_x = equator_radius * np.pi / 180
+    meters_per_degree_y = pol_radius * np.pi / 180
 
     land_colors_old = np.array([
         [0, 0, 81],
@@ -50,22 +61,45 @@ class Color:
         self.hd = hd
         self.hillshade = hillshade
 
+    def set_meters_per_pixel(self, zl: int, lat: float):
+        """Determine how many meters correspond to one pixel."""
+        pixel_per_tile = 512
+        degree_per_tile = 360 / 2**zl
+        degree_per_pixel = degree_per_tile / pixel_per_tile
+        self.meters_per_pixel_x = self.meters_per_degree_x * degree_per_pixel * np.cos(lat)
+
+    def get_latitude(self, zl: int, y: int) -> float:
+        """Determine average latitude of tile.
+        
+        Mercator goes from 85.0511 to -85.0511, which is the result of 
+        arctan(sinh(π))
+        """
+        lat_range = 2 * 85.0511
+        n_tiles = zl + 1
+        slope = - lat_range / n_tiles
+        return slope * (y + 0.5) + 85.0511
+
     def get_elevation(self, array: np.ndarray) -> np.ndarray:
+        """Convert terrarium encoded data to actual elevation in meters."""
         return (array[:,:,0] * 256 + array[:,:,1] + array[:,:,2] / 256) - 32768
 
     def normalize(self, lower_bound: np.ndarray, upper_bound: np.ndarray, val: np.ndarray):
         return (val - lower_bound) / (upper_bound - lower_bound)
 
     def blend_color_val(self, a: np.ndarray, b: np.ndarray, t: np.ndarray) -> np.ndarray:
-        # blended = (1-t)*a + t*b
         blended = np.sqrt((1 - t) * a*a + t * b*b)
         return np.rint(blended).astype(np.uint8)
 
     def get_hypsometric_color(self, elevation: np.ndarray) -> np.ndarray:
-        hyp = np.zeros((elevation.shape[0], elevation.shape[1], 3), dtype=np.uint8)
-        # catch invalid elevation values
-        # assert self.land_stops[0] < elevation.all() <= self.land_stops[-1]
+        """Apply custom hypsometric color scheme for elevation values.
 
+        Args:
+            elevation (np.ndarray): ndarray containing elevation data
+
+        Returns:
+            np.ndarray: ndarray containing rgb values for each elevation value.
+        """
+        hyp = np.zeros((elevation.shape[0], elevation.shape[1], 3), dtype=np.uint8)
         bins = np.digitize(elevation, self.land_stops) - 1
         pos = self.normalize(self.land_stops[bins], self.land_stops[bins + 1], elevation)
         color1 = self.land_colors[bins]
@@ -97,28 +131,29 @@ class Color:
         data = self.get_hypsometric_color(elevation)
         if self.hillshade:
             hillshade = self.get_hillshade(elevation)
-            intensity = self.linear_intensity(zl)
+            # intensity = self.linear_intensity(zl)
+            intensity = 0.3
             for i in range(3):
                 # data[:,:,i] = data[:,:,i] * (1-intensity + hillshade*intensity)
                 data[:,:,i] = np.minimum(np.maximum(data[:,:,i]+hillshade*255*intensity, 0), 255)
         img = Img.fromarray(data, 'RGB')
         return img
 
-    def get_hillshade(self, array: np.ndarray, azimuth: float=315, altitude: float=70) -> np.ndarray:
-        # azimuth = 360.0 - azimuth 
-        
-        # x, y = np.gradient(array)
-        # slope = np.arctan(np.sqrt(x * x + y * y))
-        # aspect = np.arctan2(-x, y)
-        # azimuth_rad = np.radians(azimuth)
-        # altitude_rad = np.radians(altitude)
-        
-        # shaded = np.sin(altitude_rad) * np.sin(slope) \
-        # + np.cos(altitude_rad) * np.cos(slope) \
-        # * np.cos((azimuth_rad - np.pi / 2.) - aspect)
+    def get_hillshade(self, array: np.ndarray, azimuth: float=315, altitude: float=45) -> np.ndarray:
+        """Get hillshade per pixel as float number from -1 to 1
 
-        x, y = np.gradient(array)
+        Args:
+            array (np.ndarray): Elevation data per pixel
+            azimuth (float, optional): Azimuth angle of the sun, degrees. Defaults to 315.
+            altitude (float, optional): Altitude of the sun, degrees. Defaults to 45.
+
+        Returns:
+            np.ndarray: Hillshading value from -1 (maximum hillshade) to +1 (minimum hillshade)
+        """
+        x, y = np.gradient(array) / self.meters_per_pixel_x
         slope = np.arctan(np.sqrt(x*x + y*y))
+
+        # aspect range: [-π, π]
         aspect = np.arctan2(y, -x)
         azimuth_math = (360. - azimuth + 90.) % 360.
         azimuth_rad = np.radians(azimuth_math)
@@ -126,11 +161,11 @@ class Color:
         shaded = ((np.cos(zenith) * np.cos(slope)) +
                  (np.sin(zenith) * np.sin(slope) * np.cos(azimuth_rad - aspect)))
 
-        # return 255 * (shaded + 1) / 2
-        # return (shaded + 1) / 2
-        return shaded
+        # normalize by zenith value to have zero impact for zero float
+        return shaded - np.cos(zenith)
 
     def merge_tiles(self):
+        """Iterate all tiles and merge 4 tiles from zl n to one tile in zl n-1."""
         n: int = 0
         start = time.time()
         zoom_dirs = [f for f in self.dirname.iterdir() if f.is_dir()]
@@ -155,6 +190,7 @@ class Color:
         print(f'Converted {n} tiles in {time.time() - start:0.4f} seconds')
 
     def merge_single_tile(self, childs):
+        """Merge 4 tiles from zl n to one tile in zl n-1."""
         im1, im2, im3, im4 = [Img.open(c) for c in childs]
         dst = Img.new('RGB', (im1.width * 2, im1.height * 2))
         dst.paste(im1, (0, 0))
@@ -164,6 +200,7 @@ class Color:
         return dst
 
     def merge_single_tile_numpy(self, childs):
+        """Merge 4 tiles from zl n to one tile in zl n-1."""
         im1, im2, im3, im4 = [np.asarray(Img.open(c)) for c in childs]
         hd_image = np.concatenate(
             (np.concatenate((im1, im2)), np.concatenate((im3, im4))),
@@ -171,17 +208,8 @@ class Color:
         )
         return Img.fromarray(hd_image)
 
-    def compress_tile(self, img, size):
-        return img.resize((size, size), Img.ANTIALIAS)
-
-    def save(self, img, path):
-        # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#webp
-        # quality is in percent from 0 to 100
-        # method is quality/speed tradeoff from 0 (fast) to 6
-        # webp works everywhere except for safari. MAybe use jpeg 2000 for safari?
-        return img.save(path, 'WEBP', quality=80, method=4) 
-
     def change_folder_in_path(self, path: Path, position: int, foldername: str) -> Path:
+        """Change folder in path."""
         # split in parts
         parts = list(path.parts)
 
@@ -190,32 +218,27 @@ class Color:
         return Path(*parts)
 
     def get_childs(self, path: Path, change: int=1) -> List[Path]:
+        """Get the four tiles from zl n+1 which correspond to one tile from zl n."""
         childs: List[Path] = []
-        zl_position: int = 2
-        x_position: int = 3
-        y_position: int = 4
         parts = list(path.parts)
-        zl = int(parts[zl_position])
-        x = int(parts[x_position])
-        y, file_ending = os.path.splitext(parts[y_position])
+        zl = int(parts[self.zl_position])
+        x = int(parts[self.x_position])
+        y, file_ending = os.path.splitext(parts[self.y_position])
         y = int(y)
-        parts[zl_position] = str(zl+change)
+        parts[self.zl_position] = str(zl+change)
 
         for i in range(2):
             new_x = x*2 + i
-            parts[x_position] = str(new_x)
+            parts[self.x_position] = str(new_x)
             for j in range(2):
                 new_y = y*2 + j
-                parts[y_position] = str(new_y) + file_ending
+                parts[self.y_position] = str(new_y) + file_ending
                 childs.append(Path(*parts))
         return childs
 
     def run(self):
-        
-        # determine bins
-        self.make_stops()
-
-        n = 0
+        """Convert from terrarium to hypsometric and apply hillshade."""
+        n: int = 0
         start = time.time()
         dirname = self.dirname if not self.hd else self.hd_dirname
         zoom_dirs = [f for f in dirname.iterdir() if f.is_dir()]
@@ -225,9 +248,8 @@ class Color:
             x_dirs = [f for f in zoom_dir.iterdir() if f.is_dir()]
 
             # determine zoom level
-            zl_position: int = 2
             parts = list(zoom_dir.parts)
-            zl = int(parts[zl_position])
+            zl = int(parts[self.zl_position])
             print(f'Zoomlevel: {zl}')
 
             for x_dir in tqdm(x_dirs):
@@ -236,6 +258,11 @@ class Color:
                 hyp_x_dir.mkdir(parents=True, exist_ok=True)
 
                 for y_file in y_files:
+                    parts = list(y_file.parts)
+                    y, _ = os.path.splitext(parts[self.y_position])
+                    avg_latitude = self.get_latitude(zl, int(y))
+                    self.set_meters_per_pixel(zl, avg_latitude)
+
                     hyp_y_file = self.change_folder_in_path(y_file, 1, self.foldername)
                     if hyp_y_file.is_file(): continue
                     # Load Image (JPEG/JPG needs libjpeg to load)
@@ -258,5 +285,9 @@ class Color:
 
 if __name__ == '__main__':
     color = Color(hd=True, hillshade=True)
+
+    # uncomment if hd tiles are required
     # color.merge_tiles()
+
+    # uncomment if hypsometric and hillshade are required
     color.run()
