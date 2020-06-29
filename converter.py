@@ -1,7 +1,7 @@
 import time
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 import PIL.Image as Img
@@ -11,6 +11,76 @@ from tqdm import tqdm
 # WGS 84, 1979
 pol_radius: float = 6356752.314
 equator_radius: float = 6378137.0
+
+class WebMercator:
+    """Tile size is assumed to be 512."""
+
+    @staticmethod
+    def lat_factor(y: np.ndarray, zl: int) -> np.ndarray:
+        """Return cosine of latitude for pixel of zoomlevel
+
+        Args:
+            y (np.ndarray): pixel range as ndarray
+            zl (int): zoomlevel
+
+        Returns:
+            np.ndarray: cosine of lat for each pixel
+        """
+        return np.cos((np.arctan(np.exp(-(y * (2*np.pi) / (512 * (2**zl)) - np.pi))) - np.pi/4) * 2)
+
+    @staticmethod
+    def pixel_to_coords(x: int, y: int, zl: int) -> Tuple[float, float]:
+        """Convert (x, y) to coordinates for particular zoom level.
+
+        Args:
+            x (int): x indice
+            y (int): y indice
+            zl (int): Zoomlevel
+
+        Returns:
+            Tuple[float, float]: (lon, lat) in degrees
+        """
+        lon = x * (2*np.pi) / (512 * (2**zl)) - np.pi
+        lat = (np.arctan(np.exp(-(y * (2*np.pi) / (512 * (2**zl)) - np.pi))) - np.pi/4) * 2
+
+        return np.degrees(lon), np.degrees(lat)
+
+    @staticmethod
+    def coords_to_pixel(lon: float, lat: float, zl: int) -> Tuple[int, int]:
+        """Convert (lat, lon) to pixel indices for particular zoom level.
+
+        Args:
+            lat (float): Latitude, degrees
+            lon (float): Longitude, degrees
+            zl (int): Zoomlevel
+
+        Returns:
+            Tuple[int, int]: (x, y) pixel count
+        """
+        assert -180 <= lon <= 180, 'Longitude must be be in range [-180, 180]'
+        assert np.abs(lat) <= 85.0511, 'Latitude must be be in range [-85.0511, 85.0511]'
+
+        lon = np.radians(lon)
+        lat = np.radians(lat)
+        x = 512 * (2**zl) * (lon + np.pi) / (2*np.pi)
+        y = 512 * (2**zl) * (np.pi - np.log(np.tan(np.pi/4 + lat/2))) / (2*np.pi)
+        return x, y
+
+    @staticmethod
+    def tile_to_coords(x: int, y: int, z: int):
+        """Get coordinates of specific tile in Web Mercator projection.
+
+        Args:
+            x (int): x indice of tile
+            y (int): y indice of tile
+            z (int): zoom level of tile
+
+        Returns:
+            Tuple[Tuple[float, float], Tuple[float, float]: (upper_left, lower_right)
+        """
+        upper_left = WebMercator.pixel_to_coords(x*512, y*512, z)
+        lower_right = WebMercator.pixel_to_coords((x+1)*512, (y+1)*512, z)
+        return upper_left, lower_right
 
 
 class Color:
@@ -24,8 +94,7 @@ class Color:
     x_position: int = 3
     y_position: int = 4
 
-    meters_per_degree_x = equator_radius * np.pi / 180
-    meters_per_degree_y = pol_radius * np.pi / 180
+    meters_per_degree = equator_radius * np.pi / 180
 
     land_colors_old = np.array([
         [0, 0, 81],
@@ -61,23 +130,27 @@ class Color:
         self.hd = hd
         self.hillshade = hillshade
 
-    def set_meters_per_pixel(self, zl: int, lat: float):
+    def set_meters_per_pixel(self, zl: int):
         """Determine how many meters correspond to one pixel."""
         pixel_per_tile = 512
         degree_per_tile = 360 / 2**zl
         degree_per_pixel = degree_per_tile / pixel_per_tile
-        self.meters_per_pixel_x = self.meters_per_degree_x * degree_per_pixel * np.cos(lat)
+        self.meters_per_pixel = self.meters_per_degree * degree_per_pixel
 
-    def get_latitude(self, zl: int, y: int) -> float:
+    def get_latitude(self, zl: int, y: int) -> Tuple[float, float]:
         """Determine average latitude of tile.
         
         Mercator goes from 85.0511 to -85.0511, which is the result of 
         arctan(sinh(π))
         """
-        lat_range = 2 * 85.0511
-        n_tiles = zl + 1
-        slope = - lat_range / n_tiles
-        return slope * (y + 0.5) + 85.0511
+        y_0 = 85.0511
+        lat_range = 2 * y_0
+        n_tiles = 2**zl
+        slope = -lat_range / n_tiles
+        slope * (y + 0.5) + y_0
+        latitude_top = slope * y + y_0
+        latitude_bottom = latitude_top + slope
+        return (latitude_top, latitude_bottom)
 
     def get_elevation(self, array: np.ndarray) -> np.ndarray:
         """Convert terrarium encoded data to actual elevation in meters."""
@@ -132,7 +205,7 @@ class Color:
         if self.hillshade:
             hillshade = self.get_hillshade(elevation)
             # intensity = self.linear_intensity(zl)
-            intensity = 0.3
+            intensity = 2
             for i in range(3):
                 # data[:,:,i] = data[:,:,i] * (1-intensity + hillshade*intensity)
                 data[:,:,i] = np.minimum(np.maximum(data[:,:,i]+hillshade*255*intensity, 0), 255)
@@ -150,7 +223,12 @@ class Color:
         Returns:
             np.ndarray: Hillshading value from -1 (maximum hillshade) to +1 (minimum hillshade)
         """
-        x, y = np.gradient(array) / self.meters_per_pixel_x
+        x, y = np.gradient(array)
+
+        # divide matrix by vector containing meters per latitude
+        x = (x.T / self.scale).T
+        y = (y.T / self.scale).T
+
         slope = np.arctan(np.sqrt(x*x + y*y))
 
         # aspect range: [-π, π]
@@ -251,6 +329,7 @@ class Color:
             parts = list(zoom_dir.parts)
             zl = int(parts[self.zl_position])
             print(f'Zoomlevel: {zl}')
+            self.set_meters_per_pixel(zl)
 
             for x_dir in tqdm(x_dirs):
                 y_files = [f for f in x_dir.iterdir() if f.is_file()]
@@ -260,16 +339,16 @@ class Color:
                 for y_file in y_files:
                     parts = list(y_file.parts)
                     y, _ = os.path.splitext(parts[self.y_position])
-                    avg_latitude = self.get_latitude(zl, int(y))
-                    self.set_meters_per_pixel(zl, avg_latitude)
+            
+                    y_scale = np.arange(int(y), int(y)+512)
+                    self.scale = self.meters_per_degree * WebMercator.lat_factor(y_scale, zl)
 
                     hyp_y_file = self.change_folder_in_path(y_file, 1, self.foldername)
-                    if hyp_y_file.is_file(): continue
-                    # Load Image (JPEG/JPG needs libjpeg to load)
-                    # print(f'Start with {y_file}')
-                    original_image = Img.open(y_file)
+                    if hyp_y_file.is_file(): 
+                        continue
 
                     # convert to hypsometric
+                    original_image = Img.open(y_file)
                     new_image = self.terrarium_to_hypsometric(original_image, zl)
 
                     # save last zoomlevel with better quality
