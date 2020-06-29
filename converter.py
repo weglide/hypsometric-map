@@ -5,12 +5,18 @@ from typing import List, Tuple
 
 import numpy as np
 import PIL.Image as Img
+from PIL import ImageFile
 from tqdm import tqdm
+
+from concurrent.futures import ThreadPoolExecutor, wait
 
 
 # WGS 84, 1979
 pol_radius: float = 6356752.314
 equator_radius: float = 6378137.0
+ImageFile.MAXBLOCK = 2**20
+executor = ThreadPoolExecutor(max_workers=4)
+futures = []
 
 class WebMercator:
     """Tile size is assumed to be 512."""
@@ -81,6 +87,7 @@ class WebMercator:
         upper_left = WebMercator.pixel_to_coords(x*512, y*512, z)
         lower_right = WebMercator.pixel_to_coords((x+1)*512, (y+1)*512, z)
         return upper_left, lower_right
+
 
 
 class Color:
@@ -314,6 +321,34 @@ class Color:
                 childs.append(Path(*parts))
         return childs
 
+
+    def doStuffForFile(self, y_file, zoom_dirs, zl, i):
+        parts = list(y_file.parts)
+        y, _ = os.path.splitext(parts[self.y_position])
+
+        y_scale = np.arange(int(y), int(y)+512)
+        self.scale = self.meters_per_degree * WebMercator.lat_factor(y_scale, zl)
+
+        hyp_y_file = self.change_folder_in_path(y_file, 1, self.foldername)
+        if hyp_y_file.is_file():
+            return
+
+        # convert to hypsometric
+        original_image = Img.open(y_file)
+        new_image = self.terrarium_to_hypsometric(original_image, zl)
+
+        # save last zoomlevel with better quality
+        if i == len(zoom_dirs) - 1:
+            new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=85, subsampling=0, optimize=True, progressive=False)
+            return
+        else:
+            new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=46, subsampling=0, optimize=True, progressive=False)
+            return
+
+
+
+   
+
     def run(self):
         """Convert from terrarium to hypsometric and apply hillshade."""
         n: int = 0
@@ -337,36 +372,23 @@ class Color:
                 hyp_x_dir.mkdir(parents=True, exist_ok=True)
 
                 for y_file in y_files:
-                    parts = list(y_file.parts)
-                    y, _ = os.path.splitext(parts[self.y_position])
-            
-                    y_scale = np.arange(int(y), int(y)+512)
-                    self.scale = self.meters_per_degree * WebMercator.lat_factor(y_scale, zl)
-
-                    hyp_y_file = self.change_folder_in_path(y_file, 1, self.foldername)
-                    if hyp_y_file.is_file(): 
-                        continue
-
-                    # convert to hypsometric
-                    original_image = Img.open(y_file)
-                    new_image = self.terrarium_to_hypsometric(original_image, zl)
-
-                    # save last zoomlevel with better quality
-                    if i == len(zoom_dirs)-1:
-                        new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=85, subsampling=0, optimize=True, progressive=False)
-                    else:
-                        new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=46, subsampling=0, optimize=True, progressive=False)
+                    a = executor.submit(self.doStuffForFile, y_file, zoom_dirs, zl, i)
+                    futures.append(a)
                     n += 1
+                wait(futures)
             
         print('----------------------------------------------')
         print(f'Converted {n} tiles in {time.time() - start:0.4f} seconds')
 
 
+
 if __name__ == '__main__':
     color = Color(hd=True, hillshade=True)
+
 
     # uncomment if hd tiles are required
     # color.merge_tiles()
 
     # uncomment if hypsometric and hillshade are required
     color.run()
+    
