@@ -322,7 +322,7 @@ class Color:
         return childs
 
 
-    def doStuffForFile(self, y_file, zoom_dirs, zl, i):
+    def convertTiles(self, y_file, zoom_dirs, zl, i):
         parts = list(y_file.parts)
         y, _ = os.path.splitext(parts[self.y_position])
 
@@ -345,9 +345,6 @@ class Color:
             new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=46, subsampling=0, optimize=True, progressive=False)
             return
 
-
-
-   
 
     def run(self):
         """Convert from terrarium to hypsometric and apply hillshade."""
@@ -372,7 +369,7 @@ class Color:
                 hyp_x_dir.mkdir(parents=True, exist_ok=True)
 
                 for y_file in y_files:
-                    a = executor.submit(self.doStuffForFile, y_file, zoom_dirs, zl, i)
+                    a = executor.submit(self.convertTiles, y_file, zoom_dirs, zl, i)
                     futures.append(a)
                     n += 1
                 wait(futures)
@@ -384,11 +381,8 @@ class Color:
 
 if __name__ == '__main__':
     color = Color(hd=True, hillshade=True)
-
-
     # uncomment if hd tiles are required
     # color.merge_tiles()
-
     # uncomment if hypsometric and hillshade are required
     color.run()
     
