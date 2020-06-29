@@ -330,7 +330,7 @@ class Color:
         self.scale = self.meters_per_degree * WebMercator.lat_factor(y_scale, zl)
 
         hyp_y_file = self.change_folder_in_path(y_file, 1, self.foldername)
-        if hyp_y_file.is_file():
+        if hyp_y_file.with_suffix('.jpeg').is_file():
             return
 
         # convert to hypsometric
