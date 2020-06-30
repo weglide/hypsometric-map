@@ -249,12 +249,21 @@ class Color:
         # normalize by zenith value to have zero impact for zero float
         return shaded - np.cos(zenith)
 
+    def merge_tiles_multi(self, y_file):
+        hd_y_file = self.change_folder_in_path(y_file, 1, self.hd_foldername)
+        childs = self.get_childs(y_file)
+        new_image = self.merge_single_tile_numpy(childs)
+        new_image.save(hd_y_file, 'png')
+        return
+
+
+
     def merge_tiles(self):
         """Iterate all tiles and merge 4 tiles from zl n to one tile in zl n-1."""
         n: int = 0
         start = time.time()
         zoom_dirs = [f for f in self.dirname.iterdir() if f.is_dir()]
-        zoom_dirs.sort()
+        zoom_dirs = sorted(zoom_dirs, key=lambda x: int(os.path.splitext(x)[0].split('/')[-1]))
         # we can not merge for highest zoom level
         for zoom_dir in zoom_dirs[:-1]:
             x_dirs_lower = [f for f in zoom_dir.iterdir() if f.is_dir()]
@@ -264,12 +273,10 @@ class Color:
 
                 y_files = [f for f in x_dir.iterdir() if f.is_file()]
                 for y_file in y_files:
-                    print(f'Start with {y_file}')
-                    hd_y_file = self.change_folder_in_path(y_file, 1, self.hd_foldername)
-                    childs = self.get_childs(y_file)
-                    new_image = self.merge_single_tile_numpy(childs)
-                    new_image.save(hd_y_file, 'png')
+                    a = executor.submit(self.merge_tiles_multi, y_file)
+                    futures.append(a)
                     n += 1
+                wait(futures)
 
         print('----------------------------------------------')
         print(f'Converted {n} tiles in {time.time() - start:0.4f} seconds')
@@ -339,10 +346,10 @@ class Color:
 
         # save last zoomlevel with better quality
         if i == len(zoom_dirs) - 1:
-            new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=85, subsampling=0, optimize=True, progressive=False)
+            new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=50, subsampling=0, optimize=True, progressive=False)
             return
         else:
-            new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=46, subsampling=0, optimize=True, progressive=False)
+            new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=50, subsampling=0, optimize=True, progressive=False)
             return
 
 
