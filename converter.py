@@ -267,7 +267,7 @@ class Color:
         # we can not merge for highest zoom level
         for zoom_dir in zoom_dirs[:-1]:
             x_dirs_lower = [f for f in zoom_dir.iterdir() if f.is_dir()]
-            for x_dir in x_dirs_lower:
+            for x_dir in tqdm(x_dirs_lower):
                 hd_x_dir = self.change_folder_in_path(x_dir, 1, self.hd_foldername)
                 hd_x_dir.mkdir(parents=True, exist_ok=True)
 
@@ -278,8 +278,8 @@ class Color:
                     n += 1
                 wait(futures)
 
-        print('----------------------------------------------')
-        print(f'Converted {n} tiles in {time.time() - start:0.4f} seconds')
+            print('----------------------------------------------')
+            print(f'Converted {n} tiles in {time.time() - start:0.4f} seconds')
 
     def merge_single_tile(self, childs):
         """Merge 4 tiles from zl n to one tile in zl n-1."""
