@@ -329,13 +329,15 @@ class Color:
         return childs
 
 
-    def convertTiles(self, y_file, zoom_dirs, zl, i):
+    def convert_tiles(self, y_file, zoom_dirs, zl, i):
         parts = list(y_file.parts)
         y, _ = os.path.splitext(parts[self.y_position])
 
-        y_scale = np.arange(int(y), int(y)+512)
-        self.scale = self.meters_per_degree * WebMercator.lat_factor(y_scale, zl)
-
+        # pixel count is regarding all tiles -> second vertical tile starts at 512
+        y_scale = np.arange(int(y)*512, int(y)*512+512)
+        self.scale = self.meters_per_pixel * WebMercator.lat_factor(y_scale, zl)
+        print(self.meters_per_pixel)
+        
         hyp_y_file = self.change_folder_in_path(y_file, 1, self.foldername)
         if hyp_y_file.with_suffix('.jpeg').is_file():
             return
@@ -376,7 +378,7 @@ class Color:
                 hyp_x_dir.mkdir(parents=True, exist_ok=True)
 
                 for y_file in y_files:
-                    a = executor.submit(self.convertTiles, y_file, zoom_dirs, zl, i)
+                    a = executor.submit(self.convert_tiles, y_file, zoom_dirs, zl, i)
                     futures.append(a)
                     n += 1
                 wait(futures)
