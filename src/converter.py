@@ -299,10 +299,10 @@ class Color:
 
         # save last zoomlevel with better quality
         if i == len(zoom_dirs) - 1:
-            new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=50, subsampling=0, optimize=True, progressive=False)
+            new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=50, subsampling=1, optimize=True, progressive=False)
             return
         else:
-            new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=50, subsampling=0, optimize=True, progressive=False)
+            new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=50, subsampling=1, optimize=True, progressive=False)
             return
 
 
