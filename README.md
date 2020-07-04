@@ -12,7 +12,7 @@ Preview with extra water layer and hillshading:
 
 1. Put (multiple) source files in ``data/terrarium`` e.g. ``data/terrarium/0/1/2.png`` where 0 is the zoom level, 1 is the x position and 2 the y position.
 
-2. Run ``python3 converter.py`` from the root folder.
+2. Run ``python -m src.converter`` from the root folder.
 
 3. Find your converted tiles in ``data/hypsometric/..``.
 
