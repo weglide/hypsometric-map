@@ -33,7 +33,7 @@ class Color:
 
     meters_per_degree = equator_radius * np.pi / 180
 
-    land_colors_old = np.array([
+    land_colors_older = np.array([
         [0, 0, 81],
         [0, 174, 162],
         [59, 123, 65],
@@ -46,7 +46,7 @@ class Color:
         [255, 255, 255],
         [171, 231, 255],
     ])
-    land_colors = np.array([
+    land_colors_old = np.array([
         [0, 0, 81],
         [0, 174, 162],
         [59, 123, 65],
@@ -59,8 +59,35 @@ class Color:
         [255, 255, 255],
         [171, 231, 255],
     ])
+    land_colors = np.array([
+        [0, 0, 81],
+        [0, 174, 162],
+        [59, 107, 65],
+        [58, 128, 55],
+        [107, 161, 76],
+        [234, 228, 150],
+        [205, 159, 67],
+        [183, 108, 93],
+        [150, 110, 150],
+        [155, 155, 155],
+        [233, 233, 233],
+        [144, 224, 255],
+    ])
 
-    land_stops = np.array([-8000, -40, 0, 220, 700, 1300, 2100, 2500, 3000, 3800, 6800])
+    land_stops = np.array([ # Stops blend from current to next value
+        -8000,  # Dark Blue
+        -40,    # Light Blue
+        0,      # Dark Green
+        170,    # Medium Green 
+        350,    # Light Green
+        720,    # Light Yellow
+        1100,   # Gold
+        1900,   # Red
+        2400,   # Violet
+        3000,   # Grey
+        3800,   # White 
+        6800    # Ice Blue
+    ])
 
     # set intensity for hillshading here
     intensity = 2
@@ -299,10 +326,10 @@ class Color:
 
         # save last zoomlevel with better quality
         if i == len(zoom_dirs) - 1:
-            new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=50, subsampling=1, optimize=True, progressive=False)
+            new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=50, subsampling=0, optimize=True, progressive=False)
             return
         else:
-            new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=50, subsampling=1, optimize=True, progressive=False)
+            new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=50, subsampling=0, optimize=True, progressive=False)
             return
 
 
