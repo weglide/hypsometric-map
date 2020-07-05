@@ -69,8 +69,8 @@ class Color:
         [205, 159, 67],
         [183, 108, 93],
         [150, 110, 150],
-        [185, 185, 185],
-        [246, 246, 246],
+        [175, 175, 175],
+        [245, 245, 245],
         [144, 224, 255],
     ])
 
@@ -78,15 +78,15 @@ class Color:
         -8000,  # Dark Blue
         -40,    # Light Blue
         0,      # Dark Green
-        170,    # Medium Green 
+        150,    # Medium Green 
         400,    # Light Green
         800,    # Light Yellow
-        1380,   # Gold
+        1350,   # Gold
         1800,   # Red
         2300,   # Violet
-        2900,   # Grey
-        3800,   # White 
-        6800    # Ice Blue
+        3000,   # Grey
+        4100,   # White 
+        6600    # Ice Blue
     ])
 
     # set intensity for hillshading here
