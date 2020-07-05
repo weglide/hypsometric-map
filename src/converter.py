@@ -90,7 +90,7 @@ class Color:
     ])
 
     # set intensity for hillshading here
-    intensity = 2
+    intensity = 0.32
 
     def __init__(self, interpolate: bool=True, hd: bool=False, hillshade: bool=False):
         self.interpolate = interpolate
