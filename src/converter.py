@@ -9,6 +9,7 @@ import PIL.Image as Img
 from PIL import ImageFile
 from tqdm import tqdm
 
+from .color_schemes import neon
 from .web_mercator import WebMercator
 
 # WGS 84, 1979
@@ -33,53 +34,8 @@ class Color:
 
     meters_per_degree = equator_radius * np.pi / 180
 
-    land_colors_old = np.array([
-        [0, 0, 81],
-        [0, 174, 162],
-        [59, 107, 65],
-        [58, 128, 55],
-        [107, 161, 76],
-        [234, 228, 150],
-        [205, 159, 67],
-        [183, 108, 93],
-        [150, 110, 150],
-        [175, 175, 175],
-        [245, 245, 245],
-        [144, 224, 255],
-    ])
-
-    land_colors = np.array([
-        [0, 0, 81],
-        [0, 174, 162],
-        [107, 185, 100], # dark green
-        [158, 200, 62], # green
-        [250, 219, 84], # mustard
-        [255, 172, 64], # orange
-        [225, 142, 97], # brown
-        [255, 108, 79],  # red
-        [255, 132, 169], # pink
-        [170, 128, 203], # purple
-        [187, 180, 203], # gray
-        [239, 143, 244], # white
-        [123, 218, 255], # blue
-    ])
-
-
-    land_stops = np.array([ # Stops blend from current to next value
-        -8000,  # Dark Blue
-        -40,    # Light Blue
-        0,      # Emerald
-        180,    # Neon Green 
-        380,    # Lemon Yellow
-        700,    # Orange
-        1000,   # Brown
-        1350,   # red
-        1800,   # Pink
-        2300,   # Purple
-        3000,   # Gray
-        4100,   # White 
-        6600    # Ice Blue
-    ])
+    # set color schema here
+    schema = neon
 
     # set intensity for hillshading here
     intensity = 0.32
@@ -131,10 +87,10 @@ class Color:
             np.ndarray: ndarray containing rgb values for each elevation value.
         """
         hyp = np.zeros((elevation.shape[0], elevation.shape[1], 3), dtype=np.uint8)
-        bins = np.digitize(elevation, self.land_stops) - 1
-        pos = self.normalize(self.land_stops[bins], self.land_stops[bins + 1], elevation)
-        color1 = self.land_colors[bins]
-        color2 = self.land_colors[bins + 1]
+        bins = np.digitize(elevation, self.schema.stops) - 1
+        pos = self.normalize(self.schema.stops[bins], self.schema.stops[bins + 1], elevation)
+        color1 = self.schema.colors[bins]
+        color2 = self.schema.colors[bins + 1]
 
         # blend rgb values
         for i in range(3):
@@ -163,8 +119,8 @@ class Color:
         elevation = self.get_elevation(data)
 
         # enforce lower and upper bound
-        elevation[elevation <= self.land_stops[0]] = self.land_stops[0] + 1
-        elevation[elevation >= self.land_stops[-1]] = self.land_stops[-1] - 1
+        elevation[elevation <= self.schema.stops[0]] = self.schema.stops[0] + 1
+        elevation[elevation >= self.schema.stops[-1]] = self.schema.stops[-1] - 1
 
         data = self.get_hypsometric_color(elevation)
         if self.hillshade:
