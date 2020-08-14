@@ -20,7 +20,8 @@ moritz_mix = ColorSchema(
         [225, 216, 165],    # Medium Champagne
         [220, 199, 149],    # Wheat
         [208, 178, 140],    # Tan
-        [190, 199, 192],    # Gray
+        # [218, 179, 168],    # Silver Pink
+        [190, 199, 192],    # Grey
         [245, 245, 245],    # White   
         [212, 235, 235],    # Ice Blue
     ]),
@@ -31,13 +32,13 @@ moritz_mix = ColorSchema(
 
         -8000,  # Dark Blue
         -40,    # Light Blue
-        0,      # Dark Green
-        150,    # Medium Green
+        0,      # Grey
+        150,    # Darker Green
         400,    # Light Green
         800,    # Light Yellow
-        1350,   # Gold	
-        1800,   # Red
-        2300,   # Violet
+        1350,   # Medium Champagne
+        1800,   # Wheat
+        2300,   # Tan
         3000,   # Grey
         3100,   # White
         4100,   # Ice Blue
