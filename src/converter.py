@@ -9,7 +9,7 @@ import PIL.Image as Img
 from PIL import ImageFile
 from tqdm import tqdm
 
-from .color_schemes import neon
+from .color_schemes import moritz_mix
 from .web_mercator import WebMercator
 
 # WGS 84, 1979
@@ -35,7 +35,7 @@ class Color:
     meters_per_degree = equator_radius * np.pi / 180
 
     # set color schema here
-    schema = neon
+    schema = moritz_mix
 
     # set intensity for hillshading here
     intensity = 0.32
