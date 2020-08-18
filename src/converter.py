@@ -17,7 +17,7 @@ pol_radius: float = 6356752.314
 equator_radius: float = 6378137.0
 
 ImageFile.MAXBLOCK = 2**20
-executor = ThreadPoolExecutor(max_workers=4)
+executor = ThreadPoolExecutor(max_workers=14)
 futures = []
 
 
@@ -261,24 +261,27 @@ class Color:
             zl (int): Current zoom level
             i (int): Index referencing zoom_dirs
         """
-        parts = list(y_file.parts)
-        y, _ = os.path.splitext(parts[self.y_position])
-        
-        hyp_y_file = self.change_folder_in_path(y_file, 1, self.foldername)
-        if hyp_y_file.with_suffix('.jpeg').is_file():
-            return
+        try:
+            parts = list(y_file.parts)
+            y, _ = os.path.splitext(parts[self.y_position])
+            
+            hyp_y_file = self.change_folder_in_path(y_file, 1, self.foldername)
+            if hyp_y_file.with_suffix('.jpeg').is_file():
+                return
 
-        # convert to hypsometric
-        original_image = Img.open(y_file)
-        new_image = self.terrarium_to_hypsometric(original_image, zl, int(y))
+            # convert to hypsometric
+            original_image = Img.open(y_file)
+            new_image = self.terrarium_to_hypsometric(original_image, zl, int(y))
 
-        # save last zoomlevel with better quality
-        if i == len(zoom_dirs) - 1:
-            new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=50, subsampling=0, optimize=True, progressive=False)
-            return
-        else:
-            new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=50, subsampling=0, optimize=True, progressive=False)
-            return
+            # save last zoomlevel with better quality
+            if i == len(zoom_dirs) - 1:
+                new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=50, subsampling=0, optimize=True, progressive=False)
+                return
+            else:
+                new_image.save(hyp_y_file.with_suffix('.jpeg'), 'jpeg', quality=50, subsampling=0, optimize=True, progressive=False)
+                return
+        except Exception as e:
+            print(e)
 
 
     def run(self):
@@ -301,12 +304,13 @@ class Color:
                 y_files = [f for f in x_dir.iterdir() if f.is_file()]
                 hyp_x_dir = self.change_folder_in_path(x_dir, 1, self.foldername)
                 hyp_x_dir.mkdir(parents=True, exist_ok=True)
-
+                futures = []
                 for y_file in y_files:
                     a = executor.submit(self.convert_tile, y_file, zoom_dirs, zl, i)
                     futures.append(a)
                     n += 1
                 wait(futures)
+                
             
         print('----------------------------------------------')
         print(f'Converted {n} tiles in {time.time() - start:0.4f} seconds')
