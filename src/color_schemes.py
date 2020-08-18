@@ -13,16 +13,16 @@ moritz_mix = ColorSchema(
     colors = np.array([
         [0, 0, 81],         # Dark Blue
         [0, 174, 162],      # Light Blue
-        [222, 218, 200],    # Grey
+        [211, 210, 185],    # Grey
         [199, 202, 170],    # Darker Green
-        [210, 214, 170],    # Light Green
-        [222, 221, 175],    # Pale Spring Bud (Yellow)
-        [220, 199, 149],    # Wheat
+        [215, 227, 166],    # Light Green
+        [238, 237, 176],    # Pale Spring Bud (Yellow)
+        [238, 210, 142],    # Gold
         [208, 178, 140],    # Tan
         [218, 179, 168],    # Silver Pink
-        [190, 199, 192],    # Grey
+        [207, 215, 209],    # Grey
         [245, 245, 245],    # White   
-        [212, 235, 235],    # Ice Blue
+        [198, 231, 247],    # Ice Blue
     ]),
     stops = np.array([ 
         # Stop indicates when this color is reached completely. 
@@ -32,51 +32,15 @@ moritz_mix = ColorSchema(
         -8000,  # Dark Blue
         -40,    # Light Blue
         0,      # Grey
-        150,    # Darker Green
-        300,    # Light Green
+        50,    # Darker Green
+        350,    # Light Green
         500,    # Pale Spring Bud (Yellow)
-        1050,   # Wheat
+        1050,   # Gold
         1800,   # Tan
         2300,   # Silver Pink
         3100,   # Grey
-        4100,   # White
-        6600    # Ice Blue
-     ])
-)
-
-moritz_mix_bright = ColorSchema(
-    colors = np.array([
-        [0, 0, 81],         # Dark Blue
-        [0, 174, 162],      # Light Blue
-        [228, 224, 205],    # Grey
-        [107, 185, 100],    # Darker Green
-        [158, 200, 62],     # Light Green
-        [250, 219, 84],     # Pale Spring Bud (Yellow)
-        [255, 172, 64],     # Wheat
-        [216, 108, 49],     # Tan
-        [235, 134, 111],    # Silver Pink
-        [190, 199, 192],    # Grey
-        [245, 245, 245],    # White   
-        [127, 213, 247],    # Ice Blue
-    ]),
-    stops = np.array([ 
-        # Stops blend from current to next value
-        # Color next top stop indicates which color is reached at this height
-        # For example, white transforms to blue between 4100 and 6600
-
-        -8000,  # Dark Blue
-        -40,    # Light Blue
-        0,      # Grey
-        150,    # Darker Green
-        400,    # Light Green
-        500,    # Pale Spring Bud (Yellow)
-        1050,   # Wheat
-        1800,   # Tan
-        2300,   # Silver Pink
-        3000,   # Grey
-        3100,   # White
-        4100,   # Ice Blue
-        6600    
+        3800,   # White
+        6000    # Ice Blue
      ])
 )
 
