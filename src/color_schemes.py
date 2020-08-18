@@ -25,7 +25,7 @@ moritz_mix = ColorSchema(
         [212, 235, 235],    # Ice Blue
     ]),
     stops = np.array([ 
-        # Stops blend from current to next value
+        # Stop indicates when this color is reached completely. 
         # Color next top stop indicates which color is reached at this height
         # For example, white transforms to blue between 4100 and 6600
 
@@ -33,15 +33,14 @@ moritz_mix = ColorSchema(
         -40,    # Light Blue
         0,      # Grey
         150,    # Darker Green
-        400,    # Light Green
+        300,    # Light Green
         500,    # Pale Spring Bud (Yellow)
         1050,   # Wheat
         1800,   # Tan
         2300,   # Silver Pink
-        3000,   # Grey
-        3100,   # White
-        4100,   # Ice Blue
-        6600    
+        3100,   # Grey
+        4100,   # White
+        6600    # Ice Blue
      ])
 )
 

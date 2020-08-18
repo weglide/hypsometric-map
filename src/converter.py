@@ -41,6 +41,7 @@ class Color:
     intensity = 0.32
 
     def __init__(self, interpolate: bool=True, hd: bool=False, hillshade: bool=False):
+        assert len(self.schema.colors) == len(self.schema.stops)
         self.interpolate = interpolate
         self.hd = hd
         self.hillshade = hillshade
