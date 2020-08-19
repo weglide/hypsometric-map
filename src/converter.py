@@ -38,7 +38,7 @@ class Color:
     schema = moritz_mix
 
     # set intensity for hillshading here
-    intensity = 0.32
+    intensity = 0.4
 
     def __init__(self, interpolate: bool=True, hd: bool=False, hillshade: bool=False):
         assert len(self.schema.colors) == len(self.schema.stops)
@@ -291,7 +291,7 @@ class Color:
         start = time.time()
         dirname = self.dirname if not self.hd else self.hd_dirname
         zoom_dirs = [f for f in dirname.iterdir() if f.is_dir()]
-        zoom_dirs.sort()
+        zoom_dirs = sorted(zoom_dirs, key=lambda x: int(os.path.splitext(x)[0].split('/')[-1]))
         
         for i, zoom_dir in enumerate(zoom_dirs):
             x_dirs = [f for f in zoom_dir.iterdir() if f.is_dir()]
