@@ -15,6 +15,7 @@ moritz_mix = ColorSchema(
         [0, 174, 162],      # Light Blue
         [211, 210, 185],    # Grey
         [199, 202, 170],    # Darker Green
+        [193, 201, 147],    # Sage
         [215, 227, 166],    # Light Green
         [238, 237, 176],    # Pale Spring Bud (Yellow)
         [238, 210, 142],    # Gold
@@ -32,7 +33,8 @@ moritz_mix = ColorSchema(
         -8000,  # Dark Blue
         -40,    # Light Blue
         0,      # Grey
-        50,    # Darker Green
+        30,     # Darker Green
+        80,     # Sage
         350,    # Light Green
         500,    # Pale Spring Bud (Yellow)
         1050,   # Gold
