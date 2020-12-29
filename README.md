@@ -13,7 +13,7 @@ Preview with extra water layer and hillshading:
 ### Clone this repo
 
 ```bash
-git clone https://github.com/weglide/gliderfiles && cd gliderfiles
+git clone https://github.com/weglide/hypsometric-map && cd hypsometric-map
 ```
 
 ### Poetry
