@@ -8,21 +8,48 @@ Convert terrarium encoded elevation tiles (left) to hypsometric tint tiles (righ
 Preview with extra water layer and hillshading:
 ![Preview](docs/preview.png)
 
+## Getting started
+
+### Clone this repo
+
+```bash
+git clone https://github.com/weglide/gliderfiles && cd gliderfiles
+```
+
+### Poetry
+
+```bash
+curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+
+# Add poetry to your shell
+export PATH="$HOME/.poetry/bin:$PATH"
+
+# check installation
+poetry --version 
+
+# install dependencies
+poetry install
+```
+
 ## Usage
 
 1. Put (multiple) source files in ``data/terrarium`` e.g. ``data/terrarium/0/1/2.png`` where 0 is the zoom level, 1 is the x position and 2 the y position.
 
-2. Run ``python -m src.converter`` from the root folder.
+2. Run ``poetry run python -m src.converter`` from the root folder.
 
 3. Find your converted tiles in ``data/hypsometric/..``.
 
+## Test
+
+```bash
+poetry run pytest
+```
 
 ## Challenges
 
 As Mapbox does not support coloring raster tiles ([Issue 2889](https://github.com/mapbox/mapbox-gl-js/issues/3889)), we need to manually change colors to hypsometric and serve raster tiles which can be used as is.
 
 How to encode different land properties like water, sand, ice and greens?
-
 
 ## Data Sources
 
@@ -33,7 +60,6 @@ How to encode different land properties like water, sand, ice and greens?
 Excerpt can be found in ``data/terrarium``.
 
 [Adobe tool for extracting color gradients from images](https://color.adobe.com/de/create/image-gradient)
-
 
 ## Hypsometric Tinting
 
@@ -53,9 +79,9 @@ Excerpt can be found in ``data/terrarium``.
 | 255 | 255 | 255 | White       | 4800           |
 | 199 | 239 | 255 | Light Blue  | 7200+          |
 
-![Gradient](docs/gradient.jpg) 
+![Gradient](docs/gradient.jpg)
 
-Example for a standart hypsometric map:
+Example for a standard hypsometric map:
 
 ![Germany Hypsometric](docs/deutschland_topo.jpg)
 
@@ -72,9 +98,9 @@ To decode:
 
   `(red * 256 + green + blue / 256) - 32768`
 
-To encode, asuming a starting value of `v`:
+To encode, assuming a starting value of `v`:
 
-```
+```python
 v += 32768
 r = floor(v/256)
 g = floor(v % 256)
@@ -83,7 +109,7 @@ b = floor((v - floor(v)) * 256)
 
 For example, with a starting value of 2523.266:
 
-```
+```python
 v += 32768
 > 35291.266
 r = floor(v/256)
@@ -98,7 +124,7 @@ b = floor((v - floor(v)) * 256)
 
 Decoded, this gives us:
 
-```
+```python
 (r * 256 + g + b / 256) - 32768
 > 2523.265625
 ```
