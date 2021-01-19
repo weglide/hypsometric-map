@@ -12,6 +12,8 @@ class ColorSchema(NamedTuple):
 moritz_mix = ColorSchema(
     colors=np.array(
         [
+            # Land: https://coolors.co/d3d2a2-c7caaa-d7e3a6-eeedb0-eed28e-d0b28c-dab3a8-cfd7d1
+            # Water/Ice: https://coolors.co/000051-00aea2-f5f5f5-c6e7f7
             [0, 0, 81],  # Dark Blue
             [0, 174, 162],  # Light Blue
             [211, 210, 185],  # Grey
@@ -31,7 +33,7 @@ moritz_mix = ColorSchema(
         [
             # Stop indicates when this color is reached completely.
             # Color next top stop indicates which color is reached at this height
-            # For example, white transforms to blue between 4100 and 6600
+            # For example, white transforms to ice blue between 3800 and 6000
             -8000,  # Dark Blue
             -40,  # Light Blue
             0,  # Grey
